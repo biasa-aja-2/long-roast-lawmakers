@@ -11,8 +11,11 @@ few words, as the judge's brief asks.
 
 Pure standard library only (os, sys). Before writing, the program checks
 the competition gate: the text must be UTF-8, 1-320 characters, not only
-whitespace, and free of control characters. If any check fails it refuses
-to write and exits non-zero.
+whitespace, and free of control characters -- plus two hygiene gates of
+our own: no DEL or tab (both are control characters the kit's gate does
+not name) and exactly one sentence, a single sentence-terminating mark
+sitting at the very end, since the brief asks for one sentence only.
+If any check fails it refuses to write and exits non-zero.
 """
 
 import os
@@ -44,9 +47,12 @@ def check_entry(text):
     if "\n" in text or "\r" in text:
         problems.append("entry must be a single line")
     for ch in text:
-        if ord(ch) < 32 and ch not in ("\t",):
+        if ord(ch) < 32 or ord(ch) == 127:
             problems.append("entry contains control character U+%04X" % ord(ch))
             break
+    terminators = [ch for ch in text if ch in ".!?"]
+    if len(terminators) != 1 or not text.endswith(terminators[0]):
+        problems.append("entry must be exactly one sentence")
     try:
         text.encode("utf-8")
     except UnicodeEncodeError as exc:
